@@ -1,0 +1,197 @@
+{% extends './base.html' %}
+
+{% block title %}Master{% endblock title %}
+
+{% block main %}
+    <h1>Master Record</h1>
+    {% csrf_token %}
+
+    <ul class="nav nav-tabs nav-fill my-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#tt" 
+                type="button" role="tab" aria-controls="home" aria-selected="true">Timetable</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#teachers" 
+                type="button" role="tab" aria-controls="profile" aria-selected="false">Teachers</button>
+        </li>
+    </ul>
+
+    <div class="tab-content my-3">
+        
+        <div class="tab-pane fade show active" id="tt" role="tabpanel">
+            <ul class="nav nav-pills nav-fill" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#t0" 
+                        type="button" role="tab" aria-controls="home" aria-selected="true">Monday</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#t1" 
+                        type="button" role="tab" aria-controls="profile" aria-selected="false">Tuesday</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#t2" 
+                        type="button" role="tab" aria-controls="contact" aria-selected="false">Wednesday</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#t3" 
+                        type="button" role="tab" aria-controls="contact" aria-selected="false">Thursday</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#t4" 
+                        type="button" role="tab" aria-controls="contact" aria-selected="false">Friday</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#t5"
+                        type="button" role="tab" aria-controls="contact" aria-selected="false">Saturday</button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                {% for table in tt %}
+                    <div class="tab-pane fade {% if forloop.counter0 == 0 %}show active{% endif %}" 
+                        id="t{{ forloop.counter0 }}" role="tabpanel">
+
+                        <div class="table-responsive-lg">
+                            <table class="table table-hover my-5">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 40%">Name</th>
+                                        <th scope="col" style="width: 5%">1</th>
+                                        <th scope="col" style="width: 5%">2</th>
+                                        <th scope="col" style="width: 5%">3</th>
+                                        <th scope="col" style="width: 5%">4</th>
+                                        <th scope="col" style="width: 5%">5</th>
+                                        <th scope="col" style="width: 5%">6</th>
+                                        <th scope="col" style="width: 5%">7</th>
+                                        <th scope="col" style="width: 5%">8</th>
+                                        <th scope="col" style="width: 20%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for k, v in table.items %}
+                                        <tr data-uid="{{ k.uid }}">
+                                            <td scope="row" style="vertical-align: middle">{{ k.name }} ({{ k.get_post }})</td>
+                                            {% for c in v %} <td scope="row" style="vertical-align: middle" contenteditable>{{ c }}</td> {% endfor %}
+                                            <td scope="row" style="vertical-align: middle">
+                                                <span class="btn btn-primary rounded-pill"
+                                                    onclick="saveTT(this.parentElement.parentElement)">Save</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+        
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="teachers" role="tabpanel">
+            <div class="table-responsive-lg">
+
+                <table class="table table-hover my-5">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="col-12 col-lg-6">Name</th>
+                            <th scope="col" class="col-4">Post</th>
+                            <th scope="col" class="col-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for teacher in teachers %}
+                            <tr data-uid={{ teacher.uid }}>
+                                <td scope="row" style="vertical-align: middle" contenteditable>{{ teacher.name }}</td>
+                                <td scope="row" style="vertical-align: middle">
+                                    <select class="form-select" data-post="{{ teacher.post }}">
+                                        <option value="T">TGT</option>
+                                        <option value="P">PGT</option>
+                                    </select>
+                                </td>
+                                <td scope="row" style="vertical-align: middle">
+                                    <span class="btn btn-primary rounded-pill"
+                                        onclick="saveEntry(this.parentElement.parentElement)">Save</span>
+                                    <span class="btn btn-danger rounded-pill"
+                                        onclick="deleteEntry(this.parentElement.parentElement)">Delete</span>
+                                </td>
+                            </tr>  
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="text-center mt-3">
+                <span class="btn btn-lg btn-secondary rounded-circle" onclick="addRow()">+</span>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock main %}
+
+{% block script %}
+    window.addEventListener('load', () => {
+        document.querySelectorAll('#teachers tbody select').forEach(select => {
+            if (select.dataset.post == 'P')
+                select.selectedIndex = 1
+        })
+    })
+
+    const saveEntry = (row) => {
+        postData({
+            method: 'update',
+            uid: row.dataset.uid,
+            name: row.querySelector('td:first-child').innerText,
+            post: row.querySelector('select').value
+        }, (res) => {
+            if (res.valid)
+                location.reload()
+        })
+    } 
+
+    const addRow = () => {
+        $('#teachers tbody').append(`
+            <tr data-uid="">
+                <td scope="row" style="vertical-align: middle" contenteditable>Name</td>
+                <td scope="row" style="vertical-align: middle">
+                    <select class="form-select" data-post="0">
+                        <option value="T">TGT</option>
+                        <option value="P">PGT</option>
+                    </select>
+                </td>
+                <td scope="row" style="vertical-align: middle">
+                    <span class="btn btn-primary rounded-pill"
+                        onclick="saveEntry(this.parentElement.parentElement)">Save</span>
+                    <span class="btn btn-danger rounded-pill"
+                        onclick="deleteEntry(this.parentElement.parentElement)">Delete</span>
+                </td>
+            </tr>  
+        `)
+    }
+
+    const deleteEntry = (row) => {
+        if (row.dataset.uid.length > 0) {
+            postData({
+                method: 'remove',
+                uid: row.dataset.uid
+            }, () => {location.reload()})
+        }
+
+        row.remove()
+    }
+
+    const saveTT = (row) => {
+        periods = []
+        row.querySelectorAll('td[contenteditable]').forEach((td, idx) => {
+            periods[idx] = td.innerText
+        })
+
+        postData({
+            method: 'updateTT',
+            uid: row.dataset.uid,
+            day: parseInt(document.querySelector('.tab-content .nav-pills .nav-link.active').dataset.bsTarget[2]),
+            periods: JSON.stringify(periods)
+        }, () => {}) 
+    }
+
+{% endblock script %}

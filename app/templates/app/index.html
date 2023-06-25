@@ -1,0 +1,43 @@
+{% extends './base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock title %}
+
+{% block main %}
+    <div style="height: 100vh;">
+
+        <div class="w-100 h-100 d-flex justify-content-center align-items-center">
+
+            <div class="rounded-3 col-10 col-lg-4 mx-4 p-4 shadow">
+
+                <h2 class="text-center my-3">Login</h2>
+                <form class="call">
+                    {% csrf_token %}
+                    
+                    <div class="text-center text-danger"></div>
+                    <div class="text-center text-success"></div>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="login_username" placeholder="admin123" required>
+                        <label for="login_username">Username</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="login_password" placeholder="password" required>
+                        <label for="login_password">Password</label>
+                    </div>
+                    <div class="text-center">
+                        <input type="submit" value="Login" class="btn btn-primary text-center">
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+{% endblock main %}
+
+{% block script %}
+    document.querySelector('footer').classList.add('fixed-bottom')
+    document.querySelector('main').style.margin = '0'
+{% endblock script %}

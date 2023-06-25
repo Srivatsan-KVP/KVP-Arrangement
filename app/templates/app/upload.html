@@ -1,0 +1,114 @@
+{% extends './base.html' %}
+
+{% block title %}Upload{% endblock title %}
+
+{% block main %}
+    {% csrf_token %}
+    <h1>List of absentees</h1>
+
+    <div class="table-responsive-lg">
+        <table class="table table-hover my-5">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 10%">#</th>
+                    <th scope="col" style="width: 60%">Name</th>
+                    <th scope="col" style="width: 30%">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in absent %}
+                    <tr data-uid={{ teacher.uid }} data-saved=true>
+                        <td scope="row" style="vertical-align: middle"></td>
+                        <td scope="row" style="vertical-align: middle">{{ teacher.name }} ({{ teacher.get_post }})</td>
+                        <td scope="row" style="vertical-align: middle">
+                            <span class="btn btn-danger rounded-pill"
+                                onclick="deleteEntry(this.parentElement.parentElement)">Delete</span>
+                        </td>
+                    </tr>  
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+
+    <div class="text-center mt-3">
+        <span class="btn btn-lg btn-secondary rounded-circle" onclick="addRow()">+</span>
+    </div>
+
+{% endblock main %}
+
+{% block script %}
+    const OPTIONS = `
+        {% for teacher in teachers %}
+            <option value="{{ teacher.uid }}">{{ teacher.name }} 
+                (${('{{ teacher.post }}' == 'P' ? 'PGT' : 'TGT')})
+            </option>
+        {% endfor %}
+    `
+
+    count = 1
+
+    const resetCount = () => {
+        count = 1
+        document.querySelectorAll('tbody tr td:first-child').forEach((node, idx) => {
+            node.innerText = idx+1
+            count += 1
+        })
+    }
+
+    window.addEventListener('load', () => {
+        resetCount()
+    })
+
+    const addRow = () => {
+        $('tbody').append(`
+            <tr data-saved="false">
+                <td scope="row" style="vertical-align: middle">${count}</td>
+                <td scope="row" style="vertical-align: middle">
+                    <select class="form-select">
+                        ${OPTIONS}
+                    </select>
+                </td>
+                <td scope="row" style="vertical-align: middle">
+                    <button class="btn btn-primary rounded-pill" 
+                        onclick="saveEntry(this.parentElement.parentElement)">Save</button>
+                    <button class="btn btn-danger rounded-pill"
+                        onclick="deleteEntry(this.parentElement.parentElement)">Delete</button>
+                </td>
+            </tr>
+        `)
+
+        count += 1
+    }
+
+    const saveEntry = (row) => {
+        select = row.querySelector('select')
+        postData(
+            {
+                method: 'add',
+                uid: select.value
+            },
+            (res) => {
+                if (res.valid) {
+                    select.disabled = true
+                    row.querySelector('button.btn-primary').setAttribute('disabled', true)
+                    row.setAttribute('data-saved', true)
+                    row.setAttribute('data-uid', select.value)
+                }
+            }
+        )
+    }
+
+    const deleteEntry = (row) => {
+        if (row.dataset.saved) {
+            postData({
+                method: 'remove',
+                uid: row.dataset.uid
+            }, () => {})
+        }
+
+        row.remove()
+        resetCount()
+    }
+    
+{% endblock script %}
