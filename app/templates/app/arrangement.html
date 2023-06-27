@@ -24,7 +24,7 @@
                 {% for k, v in arr.items %}
                     <tr>
                         <td scope="row" style="vertical-align: middle">{{ k.name }} ({{ k.get_post }})</td>
-                        {% for c in v %} <td scope="row" style="vertical-align: middle" contenteditable>{{ c }}</td> {% endfor %}
+                        {% for c in v %} <td scope="row" style="vertical-align: middle">{{ c }}</td> {% endfor %}
                     </tr>
                 {% endfor %}
             </tbody>
