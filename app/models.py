@@ -45,4 +45,4 @@ class Table(models.Model):
 class Absent(models.Model):
     date = models.DateField()
     teacher = models.ForeignKey(to=Teacher, on_delete=models.CASCADE)
-    
+    exempt = models.BooleanField(default=False)

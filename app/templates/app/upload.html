@@ -12,14 +12,16 @@
                 <tr>
                     <th scope="col" style="width: 10%">#</th>
                     <th scope="col" style="width: 60%">Name</th>
-                    <th scope="col" style="width: 30%">Actions</th>
+                    <th scope="col" style="width: 10%">Exempt</th>
+                    <th scope="col" style="width: 20%">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for teacher in absent %}
-                    <tr data-uid={{ teacher.uid }} data-saved=true>
+                {% for entry in absent %}
+                    <tr data-uid={{ entry.teacher.uid }} data-saved=true>
                         <td scope="row" style="vertical-align: middle"></td>
-                        <td scope="row" style="vertical-align: middle">{{ teacher.name }} ({{ teacher.get_post }})</td>
+                        <td scope="row" style="vertical-align: middle">{{ entry.teacher.name }} ({{ entry.teacher.get_post }})</td>
+                        <td scope="row" style="vertical-align: middle"><input type="checkbox" {% if entry.exempt %}checked{% endif %} disabled></td>
                         <td scope="row" style="vertical-align: middle">
                             <span class="btn btn-danger rounded-pill"
                                 onclick="deleteEntry(this.parentElement.parentElement)">Delete</span>
@@ -68,6 +70,7 @@
                     <select class="form-select">
                         ${OPTIONS}
                     </select>
+                    <td scope="row" style="vertical-align: middle"><input type="checkbox"></td>
                 </td>
                 <td scope="row" style="vertical-align: middle">
                     <button class="btn btn-primary rounded-pill" 
@@ -83,14 +86,18 @@
 
     const saveEntry = (row) => {
         select = row.querySelector('select')
+        checkbox = row.querySelector('input')
         postData(
             {
                 method: 'add',
-                uid: select.value
+                uid: select.value,
+                exempt: checkbox.checked
             },
             (res) => {
                 if (res.valid) {
                     select.disabled = true
+                    checkbox.disabled = true
+                    
                     row.querySelector('button.btn-primary').setAttribute('disabled', true)
                     row.setAttribute('data-saved', true)
                     row.setAttribute('data-uid', select.value)

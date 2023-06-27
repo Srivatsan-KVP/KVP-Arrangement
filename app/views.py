@@ -91,7 +91,11 @@ def master(req):
 def upload(req):
     if req.method == 'POST':
         if req.POST['method'] == 'add':
-            models.Absent(date=__parseDate(req), teacher=models.Teacher.objects.get(uid=req.POST['uid'])).save()
+            models.Absent(
+                date=__parseDate(req), 
+                teacher=models.Teacher.objects.get(uid=req.POST['uid']),
+                exempt=req.POST['exempt'] == 'true'
+            ).save()
             return JsonResponse({ 'valid': True })
         
         elif req.POST['method'] == 'remove':
@@ -100,7 +104,7 @@ def upload(req):
 
     context = {'teachers': [teacher for teacher in models.Teacher.objects.all()]}
     if req.GET.get('date', False):
-        context['absent'] = [entry.teacher for entry in models.Absent.objects.filter(date=__parseDate(req))]
+        context['absent'] = [entry for entry in models.Absent.objects.filter(date=__parseDate(req))]
 
     return render(req, 'app/upload.html', context)
 
@@ -111,13 +115,16 @@ def arrangement(req):
     
     d = __parseDate(req)
 
-    absent = [entry.teacher for entry in models.Absent.objects.filter(date=d)]
+    absent, exempt = [], []
+    for entry in models.Absent.objects.filter(date=d):
+        if entry.exempt: exempt.append(entry.teacher)
+        else: absent.append(entry.teacher)
+
     teachers = [t for t in models.Teacher.objects.all()]
     free, res = {}, {}
 
     for teacher in absent:
         classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
-        print(classes)
         res[teacher] = ['' for _ in range(8)]
 
         for i in range(8):
@@ -132,8 +139,8 @@ def arrangement(req):
                 if not free.get(t.uid): free[t.uid] = [0 for _ in range(8)]
                 if pgt_req and t.post != 'P': continue
 
-                if models.Table.objects.get(day=d.weekday(), teacher=t).get_classes()[i] == 'F' \
-                    and t not in absent and free[t.uid][i] < 2:
+                if t not in exempt and t not in absent and free[t.uid][i] < 2 and \
+                models.Table.objects.get(day=d.weekday(), teacher=t).get_classes()[i] == 'F':
                     available.append(t)
                     if free[t.uid][i] == 0:
                         free_av = True
