@@ -165,6 +165,7 @@ def arrangement(req):
                 if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
                 free[t.uid][i] += 1
                 res[teacher][i] += t.name
+                if t.post != 'N': res[teacher][i] += f' ({t.get_post()})'
             else:
                 t = random.choice(coaches)
                 res[teacher][i] += t.name + f' ({t.get_post()})'
