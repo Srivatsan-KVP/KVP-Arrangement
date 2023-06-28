@@ -120,9 +120,13 @@ def arrangement(req):
         if entry.exempt: exempt.append(entry.teacher)
         else: absent.append(entry.teacher)
 
-    teachers = [t for t in models.Teacher.objects.all()]
-    free, res = {}, {}
+    teachers, coaches = [], []
+    for t in models.Teacher.objects.all():
+        if t in absent or t in exempt: continue
+        if t.post != 'C': teachers.append(t)
+        else: coaches.append(t)
 
+    free, res = {}, {}
     for teacher in absent:
         classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
         res[teacher] = ['' for _ in range(8)]
@@ -130,16 +134,18 @@ def arrangement(req):
         for i in range(8):
             if (classes[i] == 'F'): continue
 
-            pgt_req = False
-            if int(classes[i][:-1]) >= 11: pgt_req = True
+            pgt_req = int(classes[i][:-1]) >= 11
 
             free_av, available = False, []
+            if (int(classes[i][:-1])) == 12: available.append(
+                models.Teacher(uid=uuid.uuid4(), name='Self Study', post='N')
+            )
 
             for t in teachers:
-                if not free.get(t.uid): free[t.uid] = [0 for _ in range(8)]
+                if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
                 if pgt_req and t.post != 'P': continue
 
-                if t not in exempt and t not in absent and free[t.uid][i] < 2 and \
+                if free[t.uid][i] < 2 and \
                 models.Table.objects.get(day=d.weekday(), teacher=t).get_classes()[i] == 'F':
                     available.append(t)
                     if free[t.uid][i] == 0:
@@ -153,12 +159,15 @@ def arrangement(req):
                         deleted += 1
 
             res[teacher][i] = classes[i] + '\n\n'
+
             if len(available) >= 1:
                 t = random.choice(available)
+                if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
                 free[t.uid][i] += 1
                 res[teacher][i] += t.name
             else:
-                res[teacher][i] += 'Not available'
+                t = random.choice(coaches)
+                res[teacher][i] += t.name + f' ({t.get_post()})'
 
 
     return render(req, 'app/arrangement.html', {'arr': res})

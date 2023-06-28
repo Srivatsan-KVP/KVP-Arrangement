@@ -8,7 +8,8 @@ class Teacher(models.Model):
 
     POSTS = [
         ('P', 'PGT'), 
-        ('T', 'TGT')
+        ('T', 'TGT'),
+        ('C', 'COACH')
     ]
 
     uid = models.UUIDField(default=uuid.uuid4) 
@@ -20,7 +21,8 @@ class Teacher(models.Model):
     
     def get_post(self):
         if self.post == 'P': return 'PGT'
-        else: return 'TGT'
+        elif self.post == 'T': return 'TGT'
+        return 'COACH'
 
     
 class Table(models.Model):

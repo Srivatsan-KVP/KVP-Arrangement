@@ -43,7 +43,7 @@
     const OPTIONS = `
         {% for teacher in teachers %}
             <option value="{{ teacher.uid }}">{{ teacher.name }} 
-                (${('{{ teacher.post }}' == 'P' ? 'PGT' : 'TGT')})
+                ({{ teacher.get_post }})
             </option>
         {% endfor %}
     `
