@@ -8,7 +8,40 @@ from . import forms
 
 import datetime, random, uuid, json
 
-def __parseDate(req):
+def __getTeacher(
+    classReq: str, available: list[models.Teacher],
+    alloted: dict[uuid.UUID, list[int]], day: int, period: int
+) -> str:
+    filtered: list[models.Teacher] = []
+    allowed_posts = ['P']
+    
+    if int(classReq[:-1]) < 11: allowed_posts = ['T']
+    if int(classReq[:-1]) == 12: allowed_posts.append('N')
+    allowed_posts.append('C')
+
+    free_av = False
+    for teacher in available:
+        if not alloted.get(teacher.uid, False): alloted[teacher.uid] = [0 for _ in range(8)]
+        if teacher.post in allowed_posts and (teacher.post == 'N' or (
+            classReq[-1] in teacher.sections and
+            alloted[teacher.uid][period] < teacher.get_limit() and 
+            models.Table.objects.get(teacher=teacher, day=day).get_classes()[period] == 'F'
+        )): 
+            if alloted[teacher.uid][period] == 0: free_av = True
+            filtered.append(teacher)
+
+    if free_av:
+        deleted = 0
+        for i in range(len(filtered)):
+            if alloted[filtered[i-deleted].uid][period] > 0:
+                filtered.pop(i-deleted)
+                deleted += 1
+
+    teacher = random.choice(filtered)
+    alloted[teacher.uid][period] += 1
+    return teacher.name
+
+def __parseDate(req) -> datetime.date:
     ds = [int(i) for i in req.GET['date'].split('-')]
     return datetime.date(year=ds[-1], month=ds[-2], day=ds[-3])
 
@@ -44,13 +77,15 @@ def master(req):
             if len(req.POST['uid']) > 0:
                 models.Teacher.objects.filter(uid=uuid.UUID(req.POST['uid'])).update(
                     name=req.POST['name'],
-                    post=req.POST['post']
+                    post=req.POST['post'],
+                    sections=req.POST['sections']
                 )
                 uid = req.POST['uid']
             else:
                 t = models.Teacher(
                     name=req.POST['name'],
-                    post=req.POST['post']
+                    post=req.POST['post'],
+                    sections=req.POST['sections']
                 )
                 t.save()
                 t.refresh_from_db()
@@ -67,14 +102,8 @@ def master(req):
         elif req.POST['method'] == 'updateTT':
             periods = json.loads(req.POST['periods'])
             models.Table.objects.filter(day=req.POST['day'], teacher__uid=req.POST['uid']).update(
-                p1=periods[0],
-                p2=periods[1],
-                p3=periods[2],
-                p4=periods[3],
-                p5=periods[4],
-                p6=periods[5],
-                p7=periods[6],
-                p8=periods[7]
+                p1=periods[0], p2=periods[1], p3=periods[2], p4=periods[3],
+                p5=periods[4], p6=periods[5], p7=periods[6], p8=periods[7]
             )
             return JsonResponse({})
 
@@ -92,9 +121,9 @@ def upload(req):
     if req.method == 'POST':
         if req.POST['method'] == 'add':
             models.Absent(
-                date=__parseDate(req), 
-                teacher=models.Teacher.objects.get(uid=req.POST['uid']),
-                exempt=req.POST['exempt'] == 'true'
+                date=__parseDate(req), teacher=models.Teacher.objects.get(uid=req.POST['uid']),
+                exempt=req.POST['exempt'] == 'true',
+                s1=req.POST['s1'] == 'true', s2=req.POST['s2'] == 'true'
             ).save()
             return JsonResponse({ 'valid': True })
         
@@ -102,7 +131,7 @@ def upload(req):
             models.Absent.objects.filter(date=__parseDate(req), teacher=models.Teacher.objects.get(uid=req.POST['uid'])).delete()
             return JsonResponse({})
 
-    context = {'teachers': [teacher for teacher in models.Teacher.objects.all()]}
+    context = {'teachers': [teacher for teacher in models.Teacher.objects.all()], 'absent': []}
     if req.GET.get('date', False):
         context['absent'] = [entry for entry in models.Absent.objects.filter(date=__parseDate(req))]
 
@@ -115,58 +144,35 @@ def arrangement(req):
     
     d = __parseDate(req)
 
-    absent, exempt = [], []
+    ab_s1, ab_s2, exempt = [], [], []
     for entry in models.Absent.objects.filter(date=d):
-        if entry.exempt: exempt.append(entry.teacher)
-        else: absent.append(entry.teacher)
+        if entry.exempt:
+            exempt.append(entry.teacher)
+            continue
+            
+        if entry.s1: ab_s1.append(entry.teacher)
+        if entry.s2: ab_s2.append(entry.teacher)
 
-    teachers, coaches = [], []
-    for t in models.Teacher.objects.all():
-        if t in absent or t in exempt: continue
-        if t.post != 'C': teachers.append(t)
-        else: coaches.append(t)
+    self_study = models.Teacher(uid=uuid.uuid4(), name='Self Study', post='N')
+    av_s1, av_s2 = [self_study], [self_study]
+    for teacher in models.Teacher.objects.all():
+        if teacher in exempt: continue
+        if teacher not in ab_s1: av_s1.append(teacher)
+        if teacher not in ab_s2: av_s2.append(teacher)
 
-    free, res = {}, {}
-    for teacher in absent:
-        classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
+    alloted, res = {}, {}
+    for teacher in ab_s1:
         res[teacher] = ['' for _ in range(8)]
+        classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
+        for i in range(4):
+            if classes[i] == 'F': continue
+            res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s1, alloted, d.weekday(), i)
 
-        for i in range(8):
-            if (classes[i] == 'F'): continue
-
-            pgt_req = int(classes[i][:-1]) >= 11
-
-            free_av, available = False, []
-            if (int(classes[i][:-1])) == 12: 
-                available.append(models.Teacher(uid=uuid.uuid4(), name='Self Study', post='N'))
-                free_av = True
-
-            for t in teachers:
-                if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
-                if pgt_req and t.post != 'P': continue
-
-                if free[t.uid][i] < 2 and \
-                models.Table.objects.get(day=d.weekday(), teacher=t).get_classes()[i] == 'F':
-                    available.append(t)
-                    if free[t.uid][i] == 0:
-                        free_av = True
-
-            if free_av:
-                for avt in available:
-                    if avt.post == 'N': continue
-                    if free[avt.uid][i] > 0: available.remove(avt)
-
-            res[teacher][i] = classes[i] + '\n\n'
-
-            if len(available) >= 1:
-                t = random.choice(available)
-                if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
-                free[t.uid][i] += 1
-                res[teacher][i] += t.name
-                if t.post != 'N': res[teacher][i] += f' ({t.get_post()})'
-            else:
-                t = random.choice(coaches)
-                res[teacher][i] += t.name + f' ({t.get_post()})'
-
+    for teacher in ab_s2:
+        if not res.get(teacher, False): res[teacher] = ['' for _ in range(8)]
+        classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
+        for i in range(4, 8):
+            if classes[i] == 'F': continue
+            res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s2, alloted, d.weekday(), i)
 
     return render(req, 'app/arrangement.html', {'arr': res})

@@ -1,5 +1,5 @@
 from django.db import models
-import uuid
+import uuid, math
 
 
 
@@ -14,7 +14,9 @@ class Teacher(models.Model):
 
     uid = models.UUIDField(default=uuid.uuid4) 
     name = models.CharField(max_length=32)
-    post = models.CharField(max_length=1, choices=POSTS, default='T')   
+    post = models.CharField(max_length=1, choices=POSTS, default='T')
+
+    sections = models.CharField(max_length=5, default='ABCDE')
     
     def __str__(self):
         return self.name
@@ -23,6 +25,11 @@ class Teacher(models.Model):
         if self.post == 'P': return 'PGT'
         elif self.post == 'T': return 'TGT'
         return 'COACH'
+    
+    def get_limit(self):
+        if self.post == 'C': return 4
+        if self.post == 'N': return math.inf
+        return 2
 
     
 class Table(models.Model):
@@ -44,7 +51,12 @@ class Table(models.Model):
             self.p5, self.p6, self.p7, self.p8
         ]
     
+    
+
+    
 class Absent(models.Model):
     date = models.DateField()
     teacher = models.ForeignKey(to=Teacher, on_delete=models.CASCADE)
     exempt = models.BooleanField(default=False)
+    s1 = models.BooleanField(default=True)
+    s2 = models.BooleanField(default=True)

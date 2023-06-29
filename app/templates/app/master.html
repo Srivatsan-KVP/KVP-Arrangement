@@ -95,6 +95,7 @@
                         <tr>
                             <th scope="col" class="col-12 col-lg-6">Name</th>
                             <th scope="col" class="col-4">Post</th>
+                            <th scope="col" class="col-4">Sections</th>
                             <th scope="col" class="col-4">Actions</th>
                         </tr>
                     </thead>
@@ -109,6 +110,7 @@
                                         <option value="C">COACH</option>
                                     </select>
                                 </td>
+                                <td scope="row" style="vertical-align: middle" contenteditable>{{ teacher.sections }}</td>
                                 <td scope="row" style="vertical-align: middle">
                                     <span class="btn btn-primary rounded-pill"
                                         onclick="saveEntry(this.parentElement.parentElement)">Save</span>
@@ -145,7 +147,8 @@
             method: 'update',
             uid: row.dataset.uid,
             name: row.querySelector('td:first-child').innerText,
-            post: row.querySelector('select').value
+            post: row.querySelector('select').value,
+            sections: row.querySelector('td:nth-child(3)').innerText
         }, (res) => {
             if (res.valid)
                 location.reload()
@@ -163,6 +166,7 @@
                         <option value="C">COACH</option>
                     </select>
                 </td>
+                <td scope="row" style="vertical-align: middle" contenteditable>ABCDE</td>
                 <td scope="row" style="vertical-align: middle">
                     <span class="btn btn-primary rounded-pill"
                         onclick="saveEntry(this.parentElement.parentElement)">Save</span>
