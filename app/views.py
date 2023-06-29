@@ -137,9 +137,9 @@ def arrangement(req):
             pgt_req = int(classes[i][:-1]) >= 11
 
             free_av, available = False, []
-            if (int(classes[i][:-1])) == 12: available.append(
-                models.Teacher(uid=uuid.uuid4(), name='Self Study', post='N')
-            )
+            if (int(classes[i][:-1])) == 12: 
+                available.append(models.Teacher(uid=uuid.uuid4(), name='Self Study', post='N'))
+                free_av = True
 
             for t in teachers:
                 if not free.get(t.uid, False): free[t.uid] = [0 for _ in range(8)]
