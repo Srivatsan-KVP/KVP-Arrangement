@@ -152,11 +152,9 @@ def arrangement(req):
                         free_av = True
 
             if free_av:
-                deleted = 0
-                for idx in range(len(available)):
-                    if free[available[idx - deleted].uid][i] > 0:
-                        available.pop(idx)
-                        deleted += 1
+                for avt in available:
+                    if avt.post == 'N': continue
+                    if free[avt.uid][i] > 0: available.remove(avt)
 
             res[teacher][i] = classes[i] + '\n\n'
 
