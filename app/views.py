@@ -37,9 +37,11 @@ def __getTeacher(
                 filtered.pop(i-deleted)
                 deleted += 1
 
-    teacher = random.choice(filtered)
-    alloted[teacher.uid][period] += 1
-    return teacher.name
+    if len(available) >= 1:
+        teacher = random.choice(filtered)
+        alloted[teacher.uid][period] += 1
+        return teacher.name
+    return 'Not available'
 
 def __parseDate(req) -> datetime.date:
     ds = [int(i) for i in req.GET['date'].split('-')]
