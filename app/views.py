@@ -103,10 +103,12 @@ def master(req):
         
         elif req.POST['method'] == 'updateTT':
             periods = json.loads(req.POST['periods'])
-            models.Table.objects.filter(day=req.POST['day'], teacher__uid=req.POST['uid']).update(
+            q = models.Table.objects.filter(day=req.POST['day'], teacher__uid=req.POST['uid'])
+            q.update(
                 p1=periods[0], p2=periods[1], p3=periods[2], p4=periods[3],
                 p5=periods[4], p6=periods[5], p7=periods[6], p8=periods[7]
             )
+            q[0].trim()
             return JsonResponse({})
 
     context = {'tt': [], 'teachers': [teacher for teacher in models.Teacher.objects.all()]}
@@ -168,13 +170,21 @@ def arrangement(req):
         classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
         for i in range(4):
             if classes[i] == 'F': continue
-            res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s1, alloted, d.weekday(), i)
+            if teacher.post == 'C':
+                for c in classes[i].split():
+                    res[teacher][i] += f'| {c} {__getTeacher(c, av_s1, alloted, d.weekday(), i)} |'
+            else:
+                res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s1, alloted, d.weekday(), i)
 
     for teacher in ab_s2:
         if not res.get(teacher, False): res[teacher] = ['' for _ in range(8)]
         classes = models.Table.objects.get(day=d.weekday(), teacher=teacher).get_classes()
         for i in range(4, 8):
             if classes[i] == 'F': continue
-            res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s2, alloted, d.weekday(), i)
+            if teacher.post == 'C':
+                for c in classes[i].split():
+                    res[teacher][i] += f'| {c} {__getTeacher(c, av_s2, alloted, d.weekday(), i)} |'
+            else:
+                res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s2, alloted, d.weekday(), i)
 
     return render(req, 'app/arrangement.html', {'arr': res})

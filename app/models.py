@@ -36,14 +36,14 @@ class Table(models.Model):
     teacher = models.ForeignKey(to=Teacher, on_delete=models.CASCADE)
     day = models.SmallIntegerField()
 
-    p1 = models.CharField(max_length=3, default='F')
-    p2 = models.CharField(max_length=3, default='F')
-    p3 = models.CharField(max_length=3, default='F')
-    p4 = models.CharField(max_length=3, default='F')
-    p5 = models.CharField(max_length=3, default='F')
-    p6 = models.CharField(max_length=3, default='F')
-    p7 = models.CharField(max_length=3, default='F')
-    p8 = models.CharField(max_length=3, default='F')
+    p1 = models.CharField(max_length=12, default='F')
+    p2 = models.CharField(max_length=12, default='F')
+    p3 = models.CharField(max_length=12, default='F')
+    p4 = models.CharField(max_length=12, default='F')
+    p5 = models.CharField(max_length=12, default='F')
+    p6 = models.CharField(max_length=12, default='F')
+    p7 = models.CharField(max_length=12, default='F')
+    p8 = models.CharField(max_length=12, default='F')
 
     def get_classes(self):
         return [
@@ -51,6 +51,17 @@ class Table(models.Model):
             self.p5, self.p6, self.p7, self.p8
         ]
     
+    def trim(self):
+        if self.teacher.post != 'C':
+            self.p1 = ''.join(self.p1.split())
+            self.p2 = ''.join(self.p2.split())
+            self.p3 = ''.join(self.p3.split())
+            self.p4 = ''.join(self.p4.split())
+            self.p5 = ''.join(self.p5.split())
+            self.p6 = ''.join(self.p6.split())
+            self.p7 = ''.join(self.p7.split())
+            self.p8 = ''.join(self.p8.split())
+        super().save()
     
 
     
