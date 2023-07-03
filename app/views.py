@@ -148,6 +148,16 @@ def arrangement(req):
     
     d = __parseDate(req)
 
+    if req.method == 'POST':
+        # print(req.POST)
+        new_data = json.loads(req.POST['data'])
+        with open('data.json') as f: data = json.load(f)
+        with open('data.json', 'w') as f:
+            data[str(d)] = new_data
+            json.dump(data, f)
+
+        return JsonResponse({'valid': True})
+
     ab_s1, ab_s2, exempt = [], [], []
     for entry in models.Absent.objects.filter(date=d):
         if entry.exempt:
@@ -188,3 +198,14 @@ def arrangement(req):
                 res[teacher][i] = classes[i] + ' ' + __getTeacher(classes[i], av_s2, alloted, d.weekday(), i)
 
     return render(req, 'app/arrangement.html', {'arr': res})
+
+def saved(req):
+    if not req.GET.get('date', False):
+        return HttpResponseBadRequest()
+    
+    d = __parseDate(req)
+    ctx = {"data": [], "date": '.'.join(str(d).split('-')[::-1])}
+    with open('data.json') as f:
+        ctx['data'] = json.load(f)[str(d)]
+
+    return render(req, 'app/saved.html', ctx)

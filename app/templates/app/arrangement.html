@@ -5,6 +5,8 @@
 {% block main %}
     <h1>Arrangement</h1>
 
+    {% csrf_token %}
+
     <div class="table-responsive-lg">
         <table class="table table-hover my-5">
             <thead>
@@ -24,10 +26,31 @@
                 {% for k, v in arr.items %}
                     <tr>
                         <td scope="row" style="vertical-align: middle">{{ k.name }} ({{ k.get_post }})</td>
-                        {% for c in v %} <td scope="row" style="vertical-align: middle">{{ c }}</td> {% endfor %}
+                        {% for c in v %} <td scope="row" style="vertical-align: middle" contenteditable>{{ c }}</td> {% endfor %}
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        <div class="text-center"><button class="btn btn-primary" onclick="saveArr()">Save</button></div>
     </div>
 {% endblock main %}
+
+{% block script %}
+    const saveArr = () => {
+        const data = {}
+        document.querySelectorAll('tbody tr').forEach(row => {
+            data[row.children[0].innerText] = []
+            for (i=1; i < row.children.length; i++)
+                data[row.children[0].innerText].push(row.children[i].innerText)
+        })
+
+        postData({data: JSON.stringify(data)}, (res) => {
+            if (res.valid) {
+                url = new URL(location.href)
+                url.pathname = '/saved/'
+                window.open(url, '_blank')
+            }
+        })
+    }
+{% endblock script %}
